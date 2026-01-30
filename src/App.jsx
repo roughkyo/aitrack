@@ -97,14 +97,17 @@ function App() {
         return result.data;
     };
 
-    // Parse teacher CSV to get password
-    const getTeacherPassword = () => {
+    // 교사 인증 로직 (성계 및 비밀번호 검증)
+    const checkTeacherAuth = (name, password) => {
         const lines = teacherCSV.split('\n').filter(line => line.trim());
-        if (lines.length > 1) {
-            const values = lines[1].split(',');
-            return values[1]?.trim() || 'gyhs2025'; // 비번 컬럼 값
+        // 1번째 줄은 헤더(구분,비번)이므로 2번째 줄부터 검사
+        for (let i = 1; i < lines.length; i++) {
+            const [csvName, csvPassword] = lines[i].split(',').map(v => v?.trim());
+            if (csvName === name.trim() && csvPassword === password.trim()) {
+                return true;
+            }
         }
-        return 'gyhs2025'; // fallback
+        return false;
     };
 
     // Normalize student ID (4자리 -> 5자리 변환)
@@ -123,12 +126,11 @@ function App() {
         setAuthError('');
 
         if (userRole === 'teacher') {
-            // Teacher Auth: Check against teacher.csv password
-            const correctPassword = getTeacherPassword();
-            if (userInfo.id === correctPassword) {
+            // Teacher Auth: Check against teacher.csv (Name & Password)
+            if (checkTeacherAuth(userInfo.name, userInfo.id)) {
                 setIsAuth(true);
             } else {
-                setAuthError('마스터 비밀번호가 일치하지 않습니다.');
+                setAuthError('학번(성명) 또는 비밀번호가 일치하지 않습니다.');
             }
         } else {
             // Student Auth: Check against student_list.json (4자리/5자리 모두 허용)
@@ -307,10 +309,16 @@ function App() {
                                 </div>
                             </div>
                         ) : (
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>마스터 비밀번호</label>
-                                <input type="password" placeholder="비밀번호 입력" required onChange={(e) => setUserInfo({ ...userInfo, id: e.target.value })} />
-                            </div>
+                            <>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>성명</label>
+                                    <input type="text" placeholder="실명 입력" required onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} />
+                                </div>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>비밀번호</label>
+                                    <input type="password" placeholder="비밀번호 입력" required onChange={(e) => setUserInfo({ ...userInfo, id: e.target.value })} />
+                                </div>
+                            </>
                         )}
 
                         {authError && (
