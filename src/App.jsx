@@ -26,6 +26,7 @@ function App() {
     const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
     const [apiCallsLeft, setApiCallsLeft] = useState(10); // 남은 API 호출 횟수
     const [showAbuseModal, setShowAbuseModal] = useState(false); // 비속어 경고 모달
+    const [loadingProgress, setLoadingProgress] = useState(0); // 로딩 진행바 상태
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
 
     // 테마 적용
@@ -33,6 +34,26 @@ function App() {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
+
+    // 로딩 진행바 상태 관리
+    useEffect(() => {
+        let interval;
+        if (isLoading) {
+            setLoadingProgress(0);
+            // 약 60~120초 동안 서서히 채워지도록 설정 (Gemini 모델 응답 시간 고려)
+            interval = setInterval(() => {
+                setLoadingProgress(prev => {
+                    if (prev >= 98) return prev; // 98%에서 멈춤 (완료 시점까지 대기)
+                    // 초기에는 빠르게, 갈수록 조금씩 느려지는 진행 속도
+                    const increment = prev < 30 ? 2 : (prev < 70 ? 0.8 : 0.2);
+                    return parseFloat((prev + increment).toFixed(1));
+                });
+            }, 1000);
+        } else {
+            setLoadingProgress(0);
+        }
+        return () => clearInterval(interval);
+    }, [isLoading]);
 
     // API 사용량 초기화 및 확인
     useEffect(() => {
@@ -434,14 +455,68 @@ function App() {
                             </p>
                         </div>
 
-                        <button
-                            onClick={generateRecommendation}
-                            disabled={isLoading}
-                            className="btn-primary"
-                            style={{ width: '100%', padding: '1rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem' }}
-                        >
-                            {isLoading ? 'AI가 추천 트랙을 생성중입니다. 잠시만 기다려주세요...' : <><BrainCircuit size={20} /> AI 추천 트랙 생성</>}
-                        </button>
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                onClick={generateRecommendation}
+                                disabled={isLoading}
+                                className="btn-primary"
+                                style={{
+                                    width: '100%',
+                                    padding: isLoading ? '1.5rem 1rem' : '1rem',
+                                    fontSize: '1rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.8rem',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                {isLoading ? (
+                                    <div style={{ width: '100%', zIndex: 1 }}>
+                                        <div style={{ marginBottom: '0.8rem', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                            AI가 추천 트랙을 생성 중입니다.<br />
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 'normal', opacity: 0.9 }}>
+                                                Gemini 모델을 호출해 답변을 받아오므로 약 1분~2분 가량 소요됩니다.
+                                            </span>
+                                        </div>
+                                        {/* 진행 바 컨테이너 */}
+                                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                                            <div
+                                                style={{
+                                                    width: `${loadingProgress}%`,
+                                                    height: '100%',
+                                                    background: 'linear-gradient(90deg, #00d2ff, #9d50bb)',
+                                                    transition: 'width 0.5s ease-out'
+                                                }}
+                                            />
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                            분석 진행률: {loadingProgress}% (브라우저를 종료하면 안 돼요)
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <><BrainCircuit size={20} /> AI 추천 트랙 생성</>
+                                )}
+
+                                {/* 배경 진행바 효과 (선택사항) */}
+                                {isLoading && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            bottom: 0,
+                                            width: `${loadingProgress}%`,
+                                            background: 'rgba(255,255,255,0.05)',
+                                            transition: 'width 0.5s ease-out',
+                                            zIndex: 0
+                                        }}
+                                    />
+                                )}
+                            </button>
+                        </div>
                         <div style={{ textAlign: 'center', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                             ⏳ 1시간당 남은 생성 횟수: <span style={{ color: apiCallsLeft > 0 ? 'var(--accent-blue)' : '#ff4b2b', fontWeight: 'bold' }}>{apiCallsLeft}회</span> / 10회
                         </div>
