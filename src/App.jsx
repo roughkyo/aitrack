@@ -166,11 +166,13 @@ function App() {
             if (response.ok) {
                 const data = await response.json();
                 if (data && typeof data.usageCount === 'number') {
-                    setApiCallsLeft(Math.max(0, 10 - data.usageCount));
+                    const left = Math.max(0, 10 - data.usageCount);
+                    console.log(`📊 서버 사용량 조회 성공: ${data.usageCount}회 사용, 남은 횟수: ${left}회`);
+                    setApiCallsLeft(left);
                 }
             }
         } catch (err) {
-            console.error("사용량 조회 오류:", err);
+            console.error("❌ 사용량 조회 오류:", err);
         }
     };
 
@@ -194,6 +196,10 @@ function App() {
             const latestProgramsRaw = await fetchGoogleSheetAsCSV(PROGRAMS_SHEET_ID);
             setProgramsRaw(latestProgramsRaw);
             const programs = parseProgramCSV(latestProgramsRaw);
+
+            // [낙관적 업데이트] AI 답변 요청을 시작하는 순간 카운트 차감
+            setApiCallsLeft(prev => Math.max(0, prev - 1));
+            console.log("🚀 AI 추천 API 호출 시작 (횟수 -1 반영)");
 
             // 2. AI 추천 생성 (서버 API 호출로 변경 - 보안 강화)
             const response = await fetch('/api', {
@@ -253,9 +259,11 @@ function App() {
                 };
                 console.log("✅ 정제된 추천 데이터:", sanitizedResult);
 
-                // [수정] 사용 횟수 실시간 업데이트
+                // [수정] 사용 횟수 실시간 업데이트 (0보다 클 때만 반영하여 리셋 방지)
                 if (typeof result.usageCount === 'number') {
-                    setApiCallsLeft(Math.max(0, 10 - result.usageCount));
+                    const actualLeft = Math.max(0, 10 - result.usageCount);
+                    console.log(`📊 서버 응답 반영 - 사용량: ${result.usageCount}, 남은 횟수: ${actualLeft}`);
+                    setApiCallsLeft(actualLeft);
                 }
 
                 // [추가] 깊은 복사를 통해 모든 참조 제거 (React 상태 업데이트 안정화)

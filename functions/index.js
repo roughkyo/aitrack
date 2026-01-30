@@ -257,10 +257,19 @@ exports.api = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
 
     try {
       // 1. Rate Limiting Check (Firestore)
+      if (!userData || (!userData.id && !userData.name)) {
+        console.error("Missing userData:", userData);
+        return res.status(400).json({ error: "User identity information is missing." });
+      }
+
       const userId = userData.role === 'teacher' ? `teacher_${userData.name}` : `student_${userData.id}`;
-      // 한국 시간(KST) 기준 날짜 문자열 생성 (YYYY-MM-DD)
-      const kstDate = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      // 한국 시간(KST) 기준 날짜 문자열 생성 (안정적인 방식)
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstDate = new Date(now.getTime() + kstOffset).toISOString().split('T')[0];
       const usageRef = db.collection('usage').doc(`${userId}_${kstDate}`);
+
+      console.log(`[UsageCheck] User: ${userId}, Date: ${kstDate}, Action: ${action || 'recommend'}`);
 
       let usageCount = 0;
 
