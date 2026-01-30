@@ -132,6 +132,8 @@ function App() {
             // Teacher Auth: Check against teacher.csv (Name & Password)
             if (checkTeacherAuth(userInfo.name, userInfo.id)) {
                 setIsAuth(true);
+                // 로그인 성공 직후 사용량 조회
+                fetchUsage(userInfo, 'teacher');
             } else {
                 setAuthError('학번(성명) 또는 비밀번호가 일치하지 않습니다.');
             }
@@ -142,9 +144,33 @@ function App() {
             if (student) {
                 setUserInfo({ ...userInfo, grade: student.grade, id: normalizedId });
                 setIsAuth(true);
+                // 로그인 성공 직후 사용량 조회
+                fetchUsage({ ...userInfo, grade: student.grade, id: normalizedId }, 'student');
             } else {
                 setAuthError('학번 또는 성명이 일치하지 않습니다. 본교 학생이 아닌 경우 접근이 제한됩니다.');
             }
+        }
+    };
+
+    // [추가] 서버에서 현재 사용량 조회
+    const fetchUsage = async (user, role) => {
+        try {
+            const response = await fetch('/api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userData: { ...user, role: role },
+                    action: 'getUsage'
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data && typeof data.usageCount === 'number') {
+                    setApiCallsLeft(Math.max(0, 10 - data.usageCount));
+                }
+            }
+        } catch (err) {
+            console.error("사용량 조회 오류:", err);
         }
     };
 
@@ -152,6 +178,12 @@ function App() {
         // --- 비속어 체크 ---
         if (containsAbuse(userInfo.interest)) {
             setShowAbuseModal(true);
+            return;
+        }
+
+        // [추가] 클라이언트측 1차 한도 체크 (서버 부하 감소)
+        if (apiCallsLeft <= 0) {
+            alert("오늘 AI사용 한도를 모두 소진하셨습니다. 안타깝지만 내일 다시 시도해주세요");
             return;
         }
 
@@ -220,6 +252,11 @@ function App() {
                     tracks: cleanedTracks
                 };
                 console.log("✅ 정제된 추천 데이터:", sanitizedResult);
+
+                // [수정] 사용 횟수 실시간 업데이트
+                if (typeof result.usageCount === 'number') {
+                    setApiCallsLeft(Math.max(0, 10 - result.usageCount));
+                }
 
                 // [추가] 깊은 복사를 통해 모든 참조 제거 (React 상태 업데이트 안정화)
                 const deepClonedResult = JSON.parse(JSON.stringify(sanitizedResult));
@@ -483,7 +520,7 @@ function App() {
                             </button>
                         </div>
                         <div style={{ textAlign: 'center', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            ⏳ 1일 AI 사용 한도: <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>10회</span>
+                            ⏳ 오늘 남은 AI 사용 횟수: <span style={{ color: apiCallsLeft > 0 ? 'var(--accent-blue)' : '#ff4b2b', fontWeight: 'bold' }}>{apiCallsLeft}회</span> / 10회
                         </div>
                     </section>
 

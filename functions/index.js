@@ -250,7 +250,7 @@ exports.api = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
   cors(req, res, async () => {
     if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
-    const { userData, programData, curriculumData } = req.body;
+    const { userData, programData, curriculumData, action } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) return res.status(500).json({ error: "API Key not configured." });
@@ -262,15 +262,24 @@ exports.api = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
       const kstDate = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
       const usageRef = db.collection('usage').doc(`${userId}_${kstDate}`);
 
+      let usageCount = 0;
+
+      // 사용량 확인 전용 액션인 경우
+      if (action === 'getUsage') {
+        const doc = await usageRef.get();
+        usageCount = doc.exists ? doc.data().count : 0;
+        return res.json({ usageCount });
+      }
+
       try {
         await db.runTransaction(async (t) => {
           const doc = await t.get(usageRef);
-          const currentCount = doc.exists ? doc.data().count : 0;
-          if (currentCount >= 10) {
+          usageCount = (doc.exists ? doc.data().count : 0) + 1;
+          if (usageCount > 10) {
             throw new Error("LIMIT_EXCEEDED");
           }
           t.set(usageRef, {
-            count: currentCount + 1,
+            count: usageCount,
             lastUpdated: admin.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
         });
@@ -324,7 +333,11 @@ exports.api = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
       const finalTracks = finalizeTrack(candidates, userData, programMap, courseGradeMap);
       const strategyResult = await generateExpertStrategy(strategyModel, userData, finalTracks);
 
-      res.json({ recommended_track: finalTracks, strategy: strategyResult.strategy });
+      res.json({
+        recommended_track: finalTracks,
+        strategy: strategyResult.strategy,
+        usageCount: usageCount // 실시간 사용 횟수 반환
+      });
     } catch (error) {
       console.error("Critical Error", error);
       res.status(500).json({ error: "API Error: " + error.message });
