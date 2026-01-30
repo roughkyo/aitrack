@@ -55,4 +55,4 @@ Firebase Functions에서는 Gemini API 키를 보안을 위해 **Firebase Secret
 또한, AI 남용 방지를 위해 모든 접속 및 API 호출 기록은 서버(Firestore)에 안전하게 기록됩니다.
 
 ---
-**Created by Antigravity AI Assistant for Gwangyang High School**
+**Created by yangphago with Antigravity AI Assistant**
