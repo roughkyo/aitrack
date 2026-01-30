@@ -1,6 +1,10 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
+const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
+
+admin.initializeApp();
+const db = admin.firestore();
 
 // --- AI Logic (Migrated from src/lib/gemini.js) ---
 
@@ -252,6 +256,32 @@ exports.api = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
     if (!apiKey) return res.status(500).json({ error: "API Key not configured." });
 
     try {
+      // 1. Rate Limiting Check (Firestore)
+      const userId = userData.role === 'teacher' ? `teacher_${userData.name}` : `student_${userData.id}`;
+      // 한국 시간(KST) 기준 날짜 문자열 생성 (YYYY-MM-DD)
+      const kstDate = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const usageRef = db.collection('usage').doc(`${userId}_${kstDate}`);
+
+      try {
+        await db.runTransaction(async (t) => {
+          const doc = await t.get(usageRef);
+          const currentCount = doc.exists ? doc.data().count : 0;
+          if (currentCount >= 10) {
+            throw new Error("LIMIT_EXCEEDED");
+          }
+          t.set(usageRef, {
+            count: currentCount + 1,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        });
+      } catch (e) {
+        if (e.message === "LIMIT_EXCEEDED") {
+          return res.status(429).json({ error: "오늘 AI사용 한도를 모두 소진하셨습니다. 안타깝지만 내일 다시 시도해주세요" });
+        }
+        console.error("Rate limit DB error (proceeding):", e);
+        // Firestore 연결 문제 등 DB 에러 시에는 서비스 안정을 위해 일단 진행 허용
+      }
+
       const genAI = new GoogleGenerativeAI(apiKey);
       const selectionModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }, { apiVersion: "v1beta" });
       selectionModel.generationConfig = {

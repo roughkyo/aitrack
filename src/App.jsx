@@ -55,25 +55,7 @@ function App() {
         return () => clearInterval(interval);
     }, [isLoading]);
 
-    // API 사용량 초기화 및 확인
-    useEffect(() => {
-        const checkApiLimit = () => {
-            const RATE_LIMIT_KEY = 'api_usage_log';
-            const ONE_HOUR_MS = 60 * 60 * 1000;
-            const MAX_CALLS = 10;
-
-            const now = Date.now();
-            const usageLog = JSON.parse(localStorage.getItem(RATE_LIMIT_KEY) || '[]');
-            const recentLog = usageLog.filter(timestamp => now - timestamp < ONE_HOUR_MS);
-
-            setApiCallsLeft(Math.max(0, MAX_CALLS - recentLog.length));
-        };
-
-        checkApiLimit();
-        // 1분보다 짧게 갱신 (선택 사항)
-        const interval = setInterval(checkApiLimit, 10000);
-        return () => clearInterval(interval);
-    }, []);
+    // API 사용량 체크 로직 제거됨 (서버 측에서 처리)
 
     // 비속어 체크 로직
     const containsAbuse = (text) => {
@@ -173,28 +155,6 @@ function App() {
             return;
         }
 
-        // --- 1시간당 10회 호출 제한 로직 (Client-side Rate Limiting) ---
-        const RATE_LIMIT_KEY = 'api_usage_log';
-        const MAX_CALLS_PER_HOUR = 10;
-        const ONE_HOUR_MS = 60 * 60 * 1000;
-
-        const now = Date.now();
-        const usageLog = JSON.parse(localStorage.getItem(RATE_LIMIT_KEY) || '[]');
-
-        // 1시간 이내의 기록만 남김
-        const recentLog = usageLog.filter(timestamp => now - timestamp < ONE_HOUR_MS);
-
-        if (recentLog.length >= MAX_CALLS_PER_HOUR) {
-            alert(`⚠️ API 호출 한도 초과\n\n무료 서비스 유지를 위해 1시간당 최대 ${MAX_CALLS_PER_HOUR}번까지만 추천받을 수 있습니다.\n잠시 후 다시 시도해주세요.`);
-            return;
-        }
-
-        // 새로운 호출 기록 저장
-        recentLog.push(now);
-        localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recentLog));
-        setApiCallsLeft(Math.max(0, MAX_CALLS_PER_HOUR - recentLog.length));
-        // -----------------------------------------------------------
-
         setIsLoading(true);
 
         try {
@@ -207,7 +167,12 @@ function App() {
             const response = await fetch('/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userData: userInfo, programData: programs, curriculumData })
+                // [수정] ID별 1일 제한을 위해 userRole 추가 전달
+                body: JSON.stringify({
+                    userData: { ...userInfo, role: userRole },
+                    programData: programs,
+                    curriculumData
+                })
             });
 
             const contentType = response.headers.get("content-type");
@@ -518,7 +483,7 @@ function App() {
                             </button>
                         </div>
                         <div style={{ textAlign: 'center', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            ⏳ 1시간당 남은 생성 횟수: <span style={{ color: apiCallsLeft > 0 ? 'var(--accent-blue)' : '#ff4b2b', fontWeight: 'bold' }}>{apiCallsLeft}회</span> / 10회
+                            ⏳ 1일 AI 사용 한도: <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>10회</span>
                         </div>
                     </section>
 
