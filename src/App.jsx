@@ -187,9 +187,24 @@ function App() {
                 body: JSON.stringify({ userData: userInfo, programData: programs, curriculumData })
             });
 
+            const contentType = response.headers.get("content-type");
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'AI 추천 서버 오류');
+                let errorMessage = 'AI 추천 서버 오류';
+                if (contentType && contentType.includes("application/json")) {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } else {
+                    const textError = await response.text();
+                    console.error("Server HTML Error:", textError);
+                    errorMessage = `서버 응답 오류 (${response.status}): 로컬 에뮬레이터가 실행 중인지 확인하세요.`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("Expected JSON but got:", text);
+                throw new Error("서버가 올바른 JSON 형식을 반환하지 않았습니다. (에뮬레이터 실행 상태 확인 필요)");
             }
 
             const result = await response.json();
