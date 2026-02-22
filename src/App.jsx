@@ -8,7 +8,9 @@ import Papa from 'papaparse';
 import { fetchGoogleSheetAsCSV } from './lib/googleSheets';
 
 // Static Data
-import curriculumData from '../primary_data/curriculum.json';
+import curriculum1 from '../primary_data/curriculum1.json';
+import curriculum2 from '../primary_data/curriculum2.json';
+import curriculum3 from '../primary_data/curriculum3.json';
 import studentList from '../secondary_data/student_list.json';
 import teacherCSV from '../certification/teacher.csv?raw';
 
@@ -142,10 +144,12 @@ function App() {
             const normalizedId = normalizeStudentId(userInfo.id);
             const student = studentList.find(s => s.id === normalizedId && s.name === userInfo.name);
             if (student) {
-                setUserInfo({ ...userInfo, grade: student.grade, id: normalizedId });
+                // 학번의 첫 번째 숫자를 학년으로 사용 (사용자 요청 사항)
+                const gradeFromId = normalizedId[0];
+                setUserInfo({ ...userInfo, grade: gradeFromId, id: normalizedId });
                 setIsAuth(true);
                 // 로그인 성공 직후 사용량 조회
-                fetchUsage({ ...userInfo, grade: student.grade, id: normalizedId }, 'student');
+                fetchUsage({ ...userInfo, grade: gradeFromId, id: normalizedId }, 'student');
             } else {
                 setAuthError('학번 또는 성명이 일치하지 않습니다. 본교 학생이 아닌 경우 접근이 제한됩니다.');
             }
@@ -215,7 +219,7 @@ function App() {
                 body: JSON.stringify({
                     userData: { ...userInfo, role: userRole },
                     programData: programs,
-                    curriculumData
+                    curriculumData: userInfo.grade === '1' ? curriculum1 : (userInfo.grade === '2' ? curriculum2 : curriculum3)
                 })
             });
 
@@ -438,6 +442,24 @@ function App() {
                         <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Sparkles size={18} color="var(--accent-blue)" /> 개인 프로필 설정
                         </h3>
+
+                        {userRole === 'teacher' && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>시뮬레이션 대상 학년</label>
+                                <select
+                                    value={userInfo.grade}
+                                    onChange={(e) => setUserInfo({ ...userInfo, grade: e.target.value })}
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}
+                                >
+                                    <option value="1">1학년 적용</option>
+                                    <option value="2">2학년 적용</option>
+                                    <option value="3">3학년 적용</option>
+                                </select>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', marginTop: '0.5rem' }}>
+                                    * 교사 모드에서는 분석할 학년을 직접 선택할 수 있습니다.
+                                </p>
+                            </div>
+                        )}
 
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>관심 진로 및 계열</label>
