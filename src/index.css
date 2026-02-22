@@ -135,6 +135,15 @@ h3 {
   margin-bottom: 1rem;
 }
 
+[data-theme='light'] h1,
+[data-theme='light'] h2,
+[data-theme='light'] h3 {
+  background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 input,
 select {
   background: var(--card-bg);
@@ -163,7 +172,7 @@ select:focus {
   margin-top: 2rem;
   border-bottom: 1px solid var(--glass-border);
   padding-bottom: 0.5rem;
-  color: white;
+  color: var(--text-main);
   -webkit-text-fill-color: initial;
   background: none;
 }
@@ -185,7 +194,8 @@ select:focus {
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   background: none;
-  -webkit-text-fill-color: white;
+  color: var(--text-main);
+  -webkit-text-fill-color: initial;
   font-weight: 700;
 }
 

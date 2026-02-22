@@ -59,7 +59,7 @@ function App() {
 
     // 비속어 체크 로직
     const containsAbuse = (text) => {
-        const abuseKeywords = ['니미', '18', '씨팔', '시발', '개새끼', '병신', '존나', '엿', '닥쳐', '미친', '호로', '쌍놈', '쓰레기', '지랄', '엠창'];
+        const abuseKeywords = ['C8', 'c8', '니미', '18', '씨팔', '시발', '개새끼', '병신', '존나', '엿', '닥쳐', '미친', '호로', '쌍놈', '쓰레기', '지랄', '엠창'];
         return abuseKeywords.some(keyword => text.includes(keyword));
     };
 
@@ -177,6 +177,12 @@ function App() {
     };
 
     const generateRecommendation = async () => {
+        // --- 빈 값 체크 ---
+        if (!userInfo.interest || !userInfo.interest.trim()) {
+            alert("관심 진로나 희망 계열을 입력해주세요. 진로에 맞춰 최적화된 추천을 해드릴 수 있습니다(예: 컴퓨터공학과, 의예과, 경영학과 등).");
+            return;
+        }
+
         // --- 비속어 체크 ---
         if (containsAbuse(userInfo.interest)) {
             setShowAbuseModal(true);
@@ -306,7 +312,26 @@ function App() {
                 <div className="mobile-notice" style={{ width: '90%', maxWidth: '450px', marginBottom: '0' }}>
                     <AlertCircle size={18} /> 모바일이 아닌 PC화면에 최적화 되어 있습니다.
                 </div>
-                <div className="glass-card" style={{ maxWidth: '450px', width: '90%' }}>
+                <div className="glass-card" style={{ maxWidth: '450px', width: '90%', position: 'relative' }}>
+                    <button
+                        onClick={() => window.open('https://docs.google.com/spreadsheets/d/1T8X-Zgp7QKciF3XTfe3JhcImZUSjkkqe4ZHY1WXYKRc/edit?usp=sharing', '_blank')}
+                        style={{
+                            position: 'absolute',
+                            top: '1.2rem',
+                            right: '1.2rem',
+                            padding: '0.5rem 0.8rem',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #FF512F 0%, #DD2476 100%)',
+                            border: 'none',
+                            boxShadow: '0 4px 12px rgba(221, 36, 118, 0.3)',
+                            cursor: 'pointer',
+                            zIndex: 10
+                        }}
+                    >
+                        <div style={{ fontSize: '0.7rem', lineHeight: '1.2', color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
+                            학교 프로그램<br />전체 확인
+                        </div>
+                    </button>
                     <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                         <div style={{ background: 'linear-gradient(135deg, #00d2ff, #9d50bb)', width: '60px', height: '60px', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                             <GraduationCap size={32} color="white" />
@@ -378,22 +403,22 @@ function App() {
                 <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                         <BrainCircuit color="var(--accent-blue)" />
-                        <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.5px' }}>광양고_자공고2.0 <span style={{ color: 'var(--accent-blue)' }}>이수트랙(AI 추천)</span></span>
+                        <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.5px', color: '#ffffff' }}>광양고_자공고2.0 <span style={{ color: 'var(--accent-blue)' }}>이수트랙(AI 추천)</span></span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button
                             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#ffffff', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             title={theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
                         >
                             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
-                        <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)' }}></div>
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                        <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
+                        <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>
                             <User size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                             {userRole === 'teacher' ? '교직원 모드' : `${userInfo.name} (${userInfo.id})`}
                         </span>
-                        <button onClick={() => setIsAuth(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer' }}>로그아웃</button>
+                        <button onClick={() => setIsAuth(false)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer' }}>로그아웃</button>
                     </div>
                 </div>
             </nav>
@@ -420,7 +445,7 @@ function App() {
                                 type="text"
                                 value={userInfo.interest}
                                 onChange={(e) => setUserInfo({ ...userInfo, interest: e.target.value })}
-                                placeholder="관심 진로나 희망 계열을 입력하세요"
+                                placeholder="관심 진로나 희망 계열을 입력해주세요(예: 컴퓨터공학과, 의예과, 경영학과 등) 이상한 단어를 입력시 시스템 오류발생. "
                             />
                         </div>
 
@@ -537,7 +562,7 @@ function App() {
                             <section className="glass-card" style={{ padding: '3rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
                                     <div>
-                                        <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem', background: 'linear-gradient(to right, #fff, var(--accent-blue))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                        <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>
                                             {userRole === 'teacher' ? (recommendation.title || "추천 이수 트랙").replace(/^\d+번 학생 - /, '') : (recommendation.title || `${userInfo.name}님의 맞춤형 이수 트랙`)}
                                         </h2>
                                         <p style={{ color: 'var(--text-muted)' }}>GYHS AI Consultant System v2.0</p>
@@ -546,10 +571,21 @@ function App() {
                                         <button
                                             onClick={() => window.open('https://docs.google.com/spreadsheets/d/1T8X-Zgp7QKciF3XTfe3JhcImZUSjkkqe4ZHY1WXYKRc/edit?usp=sharing', '_blank')}
                                             className="btn-primary"
-                                            style={{ padding: '0.7rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem', borderRadius: '12px', background: 'rgba(157, 80, 187, 0.2)', border: '1px solid var(--accent-purple)', minWidth: '130px' }}
+                                            style={{
+                                                padding: '0.7rem 1.5rem',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.3rem',
+                                                borderRadius: '12px',
+                                                background: 'linear-gradient(135deg, #FF512F 0%, #DD2476 100%)', // 강렬한 오렌지-마젠타
+                                                border: 'none',
+                                                boxShadow: '0 4px 15px rgba(221, 36, 118, 0.4)',
+                                                minWidth: '130px'
+                                            }}
                                         >
-                                            <div style={{ fontSize: '0.85rem', lineHeight: '1.2', textAlign: 'center' }}>
-                                                프로그램<br />전체 확인
+                                            <div style={{ fontSize: '0.85rem', lineHeight: '1.2', textAlign: 'center', color: 'white', fontWeight: 'bold' }}>
+                                                학교 프로그램<br />전체 확인
                                             </div>
                                         </button>
                                         <button onClick={downloadImage} className="btn-primary" style={{ padding: '0.7rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem', borderRadius: '12px', minWidth: '100px' }}>
@@ -564,10 +600,22 @@ function App() {
                                     {recommendation.tracks.map((track, idx) => (
                                         <div key={idx} className="timeline-item">
                                             <span className="grade-badge">{String(track.year || track.grade || "")}</span>
-                                            <div className="track-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+                                            <div className="track-grid" style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 1fr',
+                                                gap: '2rem',
+                                                background: theme === 'light' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.15)',
+                                                backdropFilter: 'blur(20px)',
+                                                WebkitBackdropFilter: 'blur(20px)',
+                                                padding: '2rem',
+                                                borderRadius: '20px',
+                                                border: '1px solid var(--glass-border)',
+                                                boxShadow: theme === 'light' ? '0 8px 32px 0 rgba(31, 38, 135, 0.07)' : '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
+                                                transition: 'transform 0.3s ease'
+                                            }}>
                                                 <div>
-                                                    <h4 style={{ color: 'var(--accent-blue)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}>
-                                                        <Sparkles size={16} /> 자공고 2.0 프로그램
+                                                    <h4 style={{ color: 'var(--accent-blue)', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', fontWeight: '700' }}>
+                                                        <Sparkles size={18} /> 자공고 2.0 프로그램
                                                     </h4>
                                                     <ul style={{ listStyle: 'none' }}>
                                                         {(track.activities || []).map((act, i) => (
@@ -598,11 +646,11 @@ function App() {
                                     <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                         <BrainCircuit size={20} color="var(--accent-purple)" /> 전문가 고도화 전략
                                     </h3>
-                                    <div className="markdown-content" style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.85)', lineHeight: '1.8' }}>
+                                    <div className="markdown-content" style={{ fontSize: '1rem', color: 'var(--text-main)', opacity: 0.9, lineHeight: '1.8' }}>
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
-                                                h1: ({ node, ...props }) => <h1 style={{ fontSize: '1.6rem', fontWeight: 'bold', marginTop: '1.5rem', marginBottom: '1rem', color: '#fff' }} {...props} />,
+                                                h1: ({ node, ...props }) => <h1 style={{ fontSize: '1.6rem', fontWeight: 'bold', marginTop: '1.5rem', marginBottom: '1rem' }} {...props} />,
                                                 h2: ({ node, ...props }) => <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginTop: '1.5rem', marginBottom: '0.8rem', color: 'var(--accent-blue)' }} {...props} />,
                                                 h3: ({ node, ...props }) => <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.2rem', marginBottom: '0.6rem', color: 'var(--accent-purple)' }} {...props} />,
                                                 p: ({ node, ...props }) => <p style={{ marginBottom: '1rem' }} {...props} />,
@@ -633,8 +681,15 @@ function App() {
 
             <footer style={{ padding: '3rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center', color: 'var(--text-muted)' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <p style={{ marginBottom: '0.5rem', fontWeight: 600 }}>광양고등학교 자공고 2.0 교육력제고부_made by yangphago</p>
-                    <p style={{ fontSize: '0.8rem' }}>© 2026 Gwangyang High School AI Roadmapping Service. All rights reserved.</p>
+                    <p style={{ marginBottom: '0.5rem', fontWeight: 600 }}>
+                        광양고등학교 자공고 2.0 교육력제고부 <span style={{ opacity: 0.6, fontWeight: 400 }}>|</span> Made by Yangphago
+                    </p>
+                    <p style={{ marginBottom: '0.5rem', fontWeight: 600 }}>
+                        문의: roughkyo@gmail.com 또는 교무실
+                    </p>
+                    <p style={{ fontSize: '0.8rem', opacity: 0.5 }}>
+                        © 2026 Gwangyang High School AI Roadmapping Service. All rights reserved.
+                    </p>
                 </div>
             </footer>
 
