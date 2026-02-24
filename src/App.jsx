@@ -46,8 +46,8 @@ function App() {
             interval = setInterval(() => {
                 setLoadingProgress(prev => {
                     if (prev >= 98) return prev; // 98%에서 멈춤 (완료 시점까지 대기)
-                    // 초기에는 빠르게, 갈수록 조금씩 느려지는 진행 속도
-                    const increment = prev < 30 ? 2 : (prev < 70 ? 0.8 : 0.2);
+                    // 초기에는 빠르게, 갈수록 조금씩 느려지는 진행 속도 (보정된 사용자 지정 속도 적용)
+                    const increment = prev < 30 ? 2.9 : (prev < 70 ? 2.0 : 0.9);
                     return parseFloat((prev + increment).toFixed(1));
                 });
             }, 1000);
@@ -467,7 +467,7 @@ function App() {
                                 type="text"
                                 value={userInfo.interest}
                                 onChange={(e) => setUserInfo({ ...userInfo, interest: e.target.value })}
-                                placeholder="관심 진로나 희망 계열을 입력해주세요(예: 컴퓨터공학과, 의예과, 경영학과 등) 이상한 단어를 입력시 시스템 오류발생. "
+                                placeholder="관심 진로나 희망 계열 입력(예: 컴퓨터공학과, 의예과, 경영학과 등) [주의] 이상한 단어 입력시 오류발생. "
                             />
                         </div>
 
@@ -535,7 +535,7 @@ function App() {
                                         <div style={{ marginBottom: '0.8rem', fontWeight: 'bold', fontSize: '0.95rem' }}>
                                             AI가 추천 트랙을 생성 중입니다.<br />
                                             <span style={{ fontSize: '0.8rem', fontWeight: 'normal', opacity: 0.9 }}>
-                                                Gemini 모델을 호출해 답변을 받아오므로 약 1분~2분 가량 소요됩니다.
+                                                Gemini 모델을 호출해 답변을 받아오므로 약 1분~2분 가량 소요됩니다. 오류발생시 새로고침 후 다시 시도해주세요.
                                             </span>
                                         </div>
                                         {/* 진행 바 컨테이너 */}

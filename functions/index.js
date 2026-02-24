@@ -111,22 +111,50 @@ function finalizeTrack(candidates, userData, programMap, courseGradeMap) {
   const inmuInfo = activityCandidates.find(p => p.name === pInmu);
   const suriInfo = activityCandidates.find(p => p.name === pSuri);
 
+  // [수정] 학생 진로 계열 분석
+  const interest = (userData.interest || "").toLowerCase();
+  const isSTEM = /공학|과학|물리|화학|생명|지구|수학|it|컴퓨터|sw|소프트웨어|반도체|로봇|AI|데이터|의학|보건|기술/.test(interest);
+
   if (inmuInfo && suriInfo) {
-    const gInmu = inmuInfo.targetGrades.includes(1) ? 1 : (inmuInfo.targetGrades.includes(3) ? 3 : null);
-    const gSuri = suriInfo.targetGrades.includes(3) ? 3 : (suriInfo.targetGrades.includes(1) ? 1 : null);
-    if (gInmu && gSuri && gInmu !== gSuri) {
-      buckets[gInmu].activities.push({ ...inmuInfo, assignedGrade: gInmu });
-      buckets[gSuri].activities.push({ ...suriInfo, assignedGrade: gSuri });
-      globalUsed.add(pInmu); globalUsed.add(pSuri);
+    let gInmu = null;
+    let gSuri = null;
+
+    if (isSTEM) {
+      // 1. 공학/과학 계열: 3학년 수리과학(심화), 1학년 인문사회(기초/융합) 우선
+      gSuri = suriInfo.targetGrades.includes(3) ? 3 : (suriInfo.targetGrades.includes(1) ? 1 : null);
+      gInmu = inmuInfo.targetGrades.includes(1) ? 1 : (inmuInfo.targetGrades.includes(3) ? 3 : null);
+    } else {
+      // 2. 인문/사회 계열: 3학년 인문사회(심화), 1학년 수리과학(기초/융합) 우선
+      gInmu = inmuInfo.targetGrades.includes(3) ? 3 : (inmuInfo.targetGrades.includes(1) ? 1 : null);
+      gSuri = suriInfo.targetGrades.includes(1) ? 1 : (suriInfo.targetGrades.includes(3) ? 3 : null);
     }
+
+    // 만약 우선순위 배치 결과가 겹친다면(둘 다 같은 학년에만 운영할 경우 등) 조정
+    if (gInmu && gSuri && gInmu === gSuri) {
+      if (isSTEM) {
+        // STEM은 수리 우선
+        gInmu = inmuInfo.targetGrades.find(g => g !== gSuri) || gInmu;
+      } else {
+        // 인문은 인문 우선
+        gSuri = suriInfo.targetGrades.find(g => g !== gInmu) || gSuri;
+      }
+    }
+
+    if (gInmu) { buckets[gInmu].activities.push({ ...inmuInfo, assignedGrade: gInmu }); globalUsed.add(pInmu); }
+    if (gSuri) { buckets[gSuri].activities.push({ ...suriInfo, assignedGrade: gSuri }); globalUsed.add(pSuri); }
+
   } else if (inmuInfo) {
-    const g = inmuInfo.targetGrades.includes(1) ? 1 : (inmuInfo.targetGrades.includes(3) ? 3 : null);
+    // 인문계열 희망자는 3학년 우선 검색
+    const preferredOrder = !isSTEM ? [3, 1] : [1, 3];
+    const g = preferredOrder.find(grade => inmuInfo.targetGrades.includes(grade));
     if (g) {
       buckets[g].activities.push({ ...inmuInfo, assignedGrade: g });
       globalUsed.add(pInmu);
     }
   } else if (suriInfo) {
-    const g = suriInfo.targetGrades.includes(3) ? 3 : (suriInfo.targetGrades.includes(1) ? 1 : null);
+    // 과학계열 희망자는 3학년 우선 검색
+    const preferredOrder = isSTEM ? [3, 1] : [1, 3];
+    const g = preferredOrder.find(grade => suriInfo.targetGrades.includes(grade));
     if (g) {
       buckets[g].activities.push({ ...suriInfo, assignedGrade: g });
       globalUsed.add(pSuri);
